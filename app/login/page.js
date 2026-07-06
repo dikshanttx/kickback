@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowRight, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 
 const socialButtons = [
   { label: 'Continue with Google', accent: 'border-white/10 bg-white/5 text-white' },
@@ -63,7 +63,7 @@ export default function LoginPage() {
         return;
       }
 
-      const exists = users.some((user) => user.email.toLowerCase() === trimmedEmail || user.username?.toLowerCase() === trimmedUsername.toLowerCase());
+      const exists = users.some((user) => user.email?.toLowerCase() === trimmedEmail || user.username?.toLowerCase() === trimmedUsername.toLowerCase());
       if (exists) {
         setMessage('An account with that email or username already exists. Please sign in instead.');
         setMessageTone('text-amber-300');
@@ -137,23 +137,26 @@ export default function LoginPage() {
   return (
     <section className="mx-auto flex min-h-[80vh] max-w-6xl items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
       <div className="grid w-full gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-8 backdrop-blur-xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur-xl sm:p-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-200">
             <ShieldCheck size={16} /> Secure access
           </div>
-          <h1 className="mt-6 text-3xl font-semibold text-white sm:text-4xl">Start with a simple account.</h1>
-          <p className="mt-4 text-lg text-slate-300">Create an account or sign in to unlock AI-powered resume review, ATS scoring, and enhanced export options.</p>
+          <h1 className="mt-6 text-3xl font-semibold text-white sm:text-4xl">Create a polished account and keep your workflow moving.</h1>
+          <p className="mt-4 text-lg text-slate-300">Sign in or create an account to unlock AI-powered resume review, ATS scoring, tailored enhancements, and one-click export tools.</p>
           <div className="mt-8 rounded-2xl border border-white/10 bg-slate-800/70 p-4 text-sm text-slate-300">
-            <p className="font-medium text-white">How it works</p>
+            <div className="flex items-center gap-2 text-white">
+              <Sparkles size={16} className="text-cyan-300" />
+              <p className="font-medium">What you can do next</p>
+            </div>
             <ul className="mt-3 space-y-2">
-              <li>• Sign in with your email</li>
-              <li>• Upload or paste your resume</li>
-              <li>• Improve it for a job role and export it</li>
+              <li>• Upload your resume and analyze it instantly</li>
+              <li>• Paste a custom job description and tailor the score</li>
+              <li>• Download an improved, full resume draft in PDF or TXT</li>
             </ul>
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-8 backdrop-blur-xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur-xl sm:p-8">
           <div className="mb-6 flex items-center gap-2 text-sm text-slate-300">
             <Mail size={16} className="text-cyan-400" />
             <span>{mode === 'login' ? 'Sign in to continue' : 'Create your free account'}</span>

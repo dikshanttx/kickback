@@ -1,104 +1,79 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useMemo, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion } from 'framer-motion';
-import { FileText, UploadCloud, Sparkles, ScanSearch, Wand2, FileIcon, Trash2 } from 'lucide-react';
+import { UploadCloud, Sparkles, ScanSearch, Wand2, FileIcon, Trash2, Download } from 'lucide-react';
 
-const sampleJobDescription = `We are looking for a product-focused software engineer with strong experience in React, Next.js, JavaScript, Tailwind CSS, and UI performance. The ideal candidate should have shipped user-facing features, collaborated across teams, and demonstrated measurable business impact. Experience with accessibility, testing, and design systems is a plus.`;
-
-function parseText(text) {
-  const sections = {
-    name: '',
-    email: '',
-    phone: '',
-    skills: [],
-    education: [],
-    experience: [],
-    projects: [],
-    certifications: [],
-    linkedin: '',
-    portfolio: '',
-    github: ''
-  };
-
-  const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-  const phoneMatch = text.match(/\+?\d[\d\s().-]{7,}\d/);
-  const linkedInMatch = text.match(/https?:\/\/www\.linkedin\.com\/[^\s]+/i);
-  const githubMatch = text.match(/https?:\/\/github\.com\/[^\s]+/i);
-  const portfolioMatch = text.match(/https?:\/\/[^\s]+/i);
-
-  sections.name = text.split(/\n/)[0]?.trim() || 'Unknown';
-  sections.email = emailMatch?.[0] || '';
-  sections.phone = phoneMatch?.[0] || '';
-  sections.linkedin = linkedInMatch?.[0] || '';
-  sections.github = githubMatch?.[0] || '';
-  sections.portfolio = portfolioMatch?.[0] || '';
-
-  const skillTokens = ['JavaScript', 'React', 'Next.js', 'Tailwind CSS', 'Node.js', 'HTML', 'CSS', 'Python', 'SQL', 'MongoDB', 'UI', 'UX', 'Testing'];
-  sections.skills = skillTokens.filter((skill) => text.toLowerCase().includes(skill.toLowerCase()));
-
-  return sections;
-}
+const keywords = ['react', 'next.js', 'javascript', 'tailwind', 'ui', 'performance', 'accessibility', 'testing', 'design systems'];
 
 function evaluateResume(text, jobDescription) {
-  const skillMatches = ['JavaScript', 'React', 'Next.js', 'Tailwind CSS', 'UI', 'Testing'].filter((skill) => {
-    const pattern = new RegExp(skill.replace(/\./g, '\\.'), 'i');
-    return pattern.test(text) || pattern.test(jobDescription);
-  });
-  const kd = jobDescription.toLowerCase();
-  const rd = text.toLowerCase();
-  const keywords = ['react', 'next.js', 'javascript', 'tailwind', 'ui', 'performance', 'accessibility', 'testing', 'design systems'];
-  const matchedKeywords = keywords.filter((keyword) => rd.includes(keyword) || kd.includes(keyword));
-  const missingKeywords = keywords.filter((keyword) => !rd.includes(keyword) && kd.includes(keyword));
+  const resumeText = text.toLowerCase();
+  const jobText = jobDescription.toLowerCase();
+  const matchedKeywords = keywords.filter((keyword) => resumeText.includes(keyword) || jobText.includes(keyword));
+  const missingKeywords = keywords.filter((keyword) => !resumeText.includes(keyword) && jobText.includes(keyword));
   const grammarIssues = [];
-  if ((text.match(/\bthe the\b/i) || []).length > 0) grammarIssues.push('Repeated word detected.');
-  if (text.split(/\s+/).length > 180) grammarIssues.push('Long sentence structure detected.');
-  const weakVerbs = ['responsible for', 'helped', 'worked on', 'managed'];
-  weakVerbs.forEach((verb) => {
-    if (text.toLowerCase().includes(verb)) grammarIssues.push(`Weak phrasing detected: ${verb}`);
-  });
-  const score = Math.min(100, Math.round((matchedKeywords.length / keywords.length) * 25 + 20 + (skillMatches.length / 6) * 20 + 15 + (grammarIssues.length === 0 ? 5 : 0) + 10));
+
+  if ((text.match(/\bthe the\b/i) || []).length > 0) grammarIssues.push('Repeated phrasing detected.');
+  if (text.split(/\s+/).length > 180) grammarIssues.push('Resume feels long and may need tighter bullets.');
+  if (resumeText.includes('responsible for') || resumeText.includes('helped') || resumeText.includes('worked on')) {
+    grammarIssues.push('Some bullets could be stronger and more measurable.');
+  }
+
+  const score = Math.min(100, Math.round(40 + matchedKeywords.length * 5 + (jobDescription.trim() ? 8 : 0) + (grammarIssues.length === 0 ? 6 : 0)));
 
   return {
     score,
     matchedKeywords,
     missingKeywords,
     grammarIssues,
-    skills: skillMatches,
     suggestions: [
-      'Add more job-specific keywords to your summary.',
-      'Strengthen bullets with measurable outcomes.',
-      'Use active verbs such as Led, Built, and Delivered.'
+      'Add more role-specific keywords to your summary and experience bullets.',
+      'Use action verbs such as Led, Built, Delivered, and Optimized.',
+      'Quantify impact with metrics like revenue, speed, adoption, or user growth.'
     ]
   };
 }
 
 function buildEnhancementPlan(text, jobDescription, analysis) {
-  const keywords = [...new Set([...(analysis?.missingKeywords || []), ...(analysis?.matchedKeywords || [])])].slice(0, 6);
-  const roleMatch = jobDescription.split(/\s+/).filter((word) => word.length > 4).slice(0, 6).join(' ');
-  const summary = `Experienced frontend engineer specializing in ${keywords.slice(0, 3).join(', ')} and building high-impact user experiences. Delivered measurable product improvements, improved performance and accessibility, and collaborated cross-functionally to ship polished features aligned with ${roleMatch}.`;
+  const matched = analysis?.matchedKeywords || [];
+  const roleMatch = jobDescription.split(/\s+/).filter((word) => word.length > 3).slice(0, 6).join(' ') || 'target role';
+  const skillList = matched.slice(0, 4).join(', ') || 'software engineering';
+  const summary = `Strategic professional with experience in ${skillList} and a strong record of building polished, user-focused solutions. This version highlights measurable impact, stronger alignment with ${roleMatch}, and clearer ATS-friendly language.`;
   const bullets = [
-    `Led the development of ${keywords[0] || 'frontend'}-focused features that improved usability, reliability, and customer satisfaction.`,
-    `Built scalable interfaces with ${keywords[1] || 'React'} and ${keywords[2] || 'Next.js'} while optimizing accessibility and performance.`,
-    `Partnered with design and product teams to deliver polished experiences and accelerate release quality.`
+    `Led the delivery of ${matched[0] || 'high-impact'} initiatives that improved usability, reliability, and product quality.`,
+    `Built modern, scalable experiences using ${matched[1] || 'frontend'} best practices and strong collaboration across teams.`,
+    `Improved performance, accessibility, and maintainability while aligning work with business goals and role requirements.`
   ];
+  const enhancedContent = [
+    'Enhanced Resume Draft',
+    '',
+    'Professional Summary',
+    summary,
+    '',
+    'Key Strengths',
+    ...bullets,
+    '',
+    'Original Resume Content',
+    text
+  ].join('\n');
 
   return {
-    targetScore: 95,
+    targetScore: Math.min(100, analysis.score + 8),
     summary,
     bullets,
     checklist: [
-      'Mirror the job description language in your summary.',
-      'Add quantified results such as speed, adoption, or revenue impact.',
-      'Include the most important keywords naturally in your skills and experience sections.'
-    ]
+      'Mirror the job description language naturally in your summary.',
+      'Add measurable results such as growth, speed, or revenue improvements.',
+      'Keep the enhanced version ATS-friendly and easy to scan.'
+    ],
+    enhancedContent
   };
 }
 
 export default function ResumeCheckerPage() {
   const [resumeText, setResumeText] = useState('');
-  const [jobDescription, setJobDescription] = useState(sampleJobDescription);
+  const [jobDescription, setJobDescription] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [enhancement, setEnhancement] = useState(null);
   const [fileName, setFileName] = useState('');
@@ -151,7 +126,15 @@ export default function ResumeCheckerPage() {
     }
   }, [jobDescription]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { 'application/pdf': ['.pdf'], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'], 'text/plain': ['.txt'] }, multiple: false });
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'text/plain': ['.txt']
+    },
+    multiple: false
+  });
 
   const stats = useMemo(() => {
     if (!analysis) return null;
@@ -164,6 +147,7 @@ export default function ResumeCheckerPage() {
   }, [analysis]);
 
   const handleAnalyze = () => {
+    if (!resumeText.trim()) return;
     setIsProcessing(true);
     setEnhancement(null);
     setAnalysis(evaluateResume(resumeText, jobDescription));
@@ -178,29 +162,19 @@ export default function ResumeCheckerPage() {
   const handleDownloadEnhancedResume = (format = 'txt') => {
     if (!enhancement) return;
 
-    const content = [
-      'Enhanced Resume Draft',
-      '',
-      'Summary',
-      enhancement.summary,
-      '',
-      'Suggested Bullet Points',
-      ...enhancement.bullets,
-      '',
-      'ATS Checklist',
-      ...enhancement.checklist
-    ].join('\n');
+    const content = enhancement.enhancedContent;
 
     let blob;
     let fileName;
 
     if (format === 'pdf') {
-      const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;padding:24px;line-height:1.6"><h1>Enhanced Resume Draft</h1><p>${enhancement.summary}</p><h3>Suggested Bullet Points</h3><ul>${enhancement.bullets.map((bullet) => `<li>${bullet}</li>`).join('')}</ul><h3>ATS Checklist</h3><ul>${enhancement.checklist.map((item) => `<li>${item}</li>`).join('')}</ul></body></html>`;
+      const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;padding:24px;line-height:1.6"><h1>Enhanced Resume Draft</h1><p><strong>Professional Summary</strong><br/>${enhancement.summary}</p><h3>Key Strengths</h3><ul>${enhancement.bullets.map((bullet) => `<li>${bullet}</li>`).join('')}</ul><h3>Original Resume Content</h3><pre style="white-space:pre-wrap">${resumeText}</pre></body></html>`;
       blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       fileName = 'enhanced-resume.html';
-    } else if (format === 'docx') {
-      blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      fileName = 'enhanced-resume.doc';
+    } else if (format === 'html') {
+      const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;padding:24px;line-height:1.6"><h1>Enhanced Resume Draft</h1><h2>Professional Summary</h2><p>${enhancement.summary}</p><h2>Key Strengths</h2><ul>${enhancement.bullets.map((bullet) => `<li>${bullet}</li>`).join('')}</ul><h2>Original Resume Content</h2><pre style="white-space:pre-wrap">${resumeText}</pre></body></html>`;
+      blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      fileName = 'enhanced-resume.html';
     } else {
       blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
       fileName = 'enhanced-resume.txt';
@@ -214,21 +188,29 @@ export default function ResumeCheckerPage() {
     URL.revokeObjectURL(url);
   };
 
+  const resetResume = () => {
+    setFileName('');
+    setFileMeta('');
+    setResumeText('');
+    setAnalysis(null);
+    setEnhancement(null);
+  };
+
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <div className="mb-10 space-y-3">
         <p className="text-sm font-medium uppercase tracking-[0.3em] text-cyan-300">Resume Checker</p>
-        <h1 className="text-3xl font-semibold text-white sm:text-4xl">AI-powered, browser-only resume analysis</h1>
-        <p className="max-w-3xl text-lg text-slate-300">Upload a resume, paste text, and compare it against a job description without sending data anywhere.</p>
+        <h1 className="text-3xl font-semibold text-white sm:text-4xl">ATS-ready resume analysis with real enhancement flow</h1>
+        <p className="max-w-3xl text-lg text-slate-300">Upload your resume, add a target job description, analyze it for ATS compatibility, and generate an enhanced draft while keeping your original content intact.</p>
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="space-y-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur-xl">
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-semibold text-white">Resume Upload</h2>
-                <p className="text-sm text-slate-400">Drag and drop files or click to browse</p>
+                <p className="text-sm text-slate-400">Drop a file or click to browse</p>
               </div>
               <div className="rounded-2xl bg-violet-500/10 p-3 text-violet-300"><UploadCloud size={20} /></div>
             </div>
@@ -247,43 +229,44 @@ export default function ResumeCheckerPage() {
                     <p className="text-sm text-slate-400">{fileMeta}</p>
                   </div>
                 </div>
-                <button onClick={() => { setFileName(''); setFileMeta(''); setResumeText(''); setAnalysis(null); }} className="rounded-full p-2 text-slate-400 hover:bg-white/10 hover:text-white"><Trash2 size={16} /></button>
+                <button onClick={resetResume} className="rounded-full p-2 text-slate-400 hover:bg-white/10 hover:text-white"><Trash2 size={16} /></button>
               </div>
             ) : null}
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur-xl">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur-xl">
             <div className="mb-4 flex items-center gap-3">
               <Sparkles size={18} className="text-cyan-400" />
               <h2 className="text-xl font-semibold text-white">Paste Resume Text</h2>
             </div>
-            <textarea value={resumeText} onChange={(e) => setResumeText(e.target.value)} rows={10} className="w-full rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-slate-200 outline-none ring-0" placeholder="Paste your resume text here..." />
+            <textarea value={resumeText} onChange={(e) => setResumeText(e.target.value)} rows={10} className="w-full rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-slate-200 outline-none" placeholder="Paste your resume text here..." />
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur-xl">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur-xl">
             <div className="mb-4 flex items-center gap-3">
               <ScanSearch size={18} className="text-violet-400" />
               <h2 className="text-xl font-semibold text-white">Job Description</h2>
             </div>
-            <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} rows={8} className="w-full rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-slate-200 outline-none ring-0" />
+            <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} rows={8} className="w-full rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-slate-200 outline-none" placeholder="Paste the job description you want to target..." />
           </motion.div>
         </div>
 
         <div className="space-y-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur-xl">
-            <div className="mb-6 flex items-center justify-between">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur-xl">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-white">ATS Analysis</h2>
-                <p className="text-sm text-slate-400">Real-time scoring and keyword insights</p>
+                <p className="text-sm text-slate-400">Analyze the resume and get score-based guidance</p>
               </div>
-              <button onClick={handleAnalyze} disabled={isProcessing} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-cyan-500 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70">
+              <button onClick={handleAnalyze} disabled={isProcessing || !resumeText.trim()} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-cyan-500 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70">
                 <Wand2 size={16} /> {isProcessing ? 'Analyzing...' : 'Analyze Resume'}
               </button>
             </div>
+
             {!analysis && !isProcessing ? (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-slate-800/60 p-8 text-center text-slate-400">Upload a resume or paste text to begin your analysis.</div>
+              <div className="rounded-2xl border border-dashed border-white/10 bg-slate-800/60 p-8 text-center text-slate-400">Upload a resume or paste text first, then click “Analyze Resume”.</div>
             ) : isProcessing ? (
-              <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-8 text-center text-cyan-100">Preparing your ATS analysis and resume enhancement suggestions…</div>
+              <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-8 text-center text-cyan-100">Preparing your ATS analysis and enhancement suggestions…</div>
             ) : (
               <div className="space-y-6">
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -294,10 +277,12 @@ export default function ResumeCheckerPage() {
                     </div>
                   ))}
                 </div>
+
                 <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4">
                   <p className="text-sm text-emerald-200">Overall ATS Score</p>
                   <p className="text-4xl font-semibold text-white">{analysis.score}/100</p>
                 </div>
+
                 <div className="space-y-3">
                   <h3 className="text-lg font-semibold text-white">Matched Keywords</h3>
                   <div className="flex flex-wrap gap-2">
@@ -306,6 +291,7 @@ export default function ResumeCheckerPage() {
                     ))}
                   </div>
                 </div>
+
                 <div className="space-y-3">
                   <h3 className="text-lg font-semibold text-white">Missing Keywords</h3>
                   <div className="flex flex-wrap gap-2">
@@ -314,17 +300,19 @@ export default function ResumeCheckerPage() {
                     ))}
                   </div>
                 </div>
+
                 <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <p className="text-sm text-cyan-200">ATS Enhancement</p>
-                      <h3 className="text-lg font-semibold text-white">Make this resume 95+ ATS ready</h3>
-                      <p className="mt-1 text-sm text-slate-300">Generate a role-based rewrite plan with stronger keywords, action-driven bullets, and a sharper summary.</p>
+                      <h3 className="text-lg font-semibold text-white">Turn this resume into a stronger application package</h3>
+                      <p className="mt-1 text-sm text-slate-300">A tailored summary, stronger bullets, and an enhanced draft are created from your original resume content.</p>
                     </div>
                     <button onClick={handleEnhance} className="rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 px-4 py-2 text-sm font-medium text-white">
                       Enhance Resume
                     </button>
                   </div>
+
                   {enhancement ? (
                     <div className="mt-4 space-y-4">
                       <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
@@ -352,21 +340,22 @@ export default function ResumeCheckerPage() {
                         </ul>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <button onClick={() => handleDownloadEnhancedResume('txt')} className="rounded-full bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
-                          Save as TXT
+                        <button onClick={() => handleDownloadEnhancedResume('txt')} className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
+                          <Download size={16} /> Download TXT
                         </button>
-                        <button onClick={() => handleDownloadEnhancedResume('docx')} className="rounded-full bg-cyan-500/15 px-4 py-2 text-sm font-medium text-cyan-200">
-                          Save as DOCX
+                        <button onClick={() => handleDownloadEnhancedResume('html')} className="inline-flex items-center gap-2 rounded-full bg-cyan-500/15 px-4 py-2 text-sm font-medium text-cyan-200">
+                          <Download size={16} /> Download HTML
                         </button>
-                        <button onClick={() => handleDownloadEnhancedResume('pdf')} className="rounded-full bg-violet-500/15 px-4 py-2 text-sm font-medium text-violet-200">
-                          Save as PDF
+                        <button onClick={() => handleDownloadEnhancedResume('pdf')} className="inline-flex items-center gap-2 rounded-full bg-violet-500/15 px-4 py-2 text-sm font-medium text-violet-200">
+                          <Download size={16} /> Download PDF
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-4 text-sm text-slate-300">This will turn your current analysis into a stronger, role-specific version of your resume with a target of 95+ ATS compatibility.</p>
+                    <p className="mt-4 text-sm text-slate-300">The enhanced version builds from your original resume and adds tailored language for your target role.</p>
                   )}
                 </div>
+
                 <div className="space-y-3">
                   <h3 className="text-lg font-semibold text-white">Suggested Improvements</h3>
                   <ul className="space-y-2 text-sm text-slate-300">
