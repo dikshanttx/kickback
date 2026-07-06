@@ -16,7 +16,7 @@
     "jspdf": "^2.5.1",
     "lucide-react": "^0.471.0",
     "mammoth": "^1.8.0",
-    "next": "15.3.3",
+    "next": "15.3.8",
     "pdfjs-dist": "^4.6.82",
     "react": "^18.3.1",
     "react-chartjs-2": "^4.0.0",
